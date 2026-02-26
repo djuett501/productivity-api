@@ -6,9 +6,9 @@ The long term goal is to provide task management, budget tracking, and JWT-based
 ## Features
 
 - Router system – Implemented
-- Budget tracker CRUD – Planned  
-- User authentication (JWT) – In Progress  
+- Budget tracker CRUD – Planned
 - Task manager CRUD – In Progress  
+- User authentication (JWT) – In Progress  
 
 ## Tech Stack
 
