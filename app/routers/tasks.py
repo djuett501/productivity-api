@@ -1,71 +1,77 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from dataclasses import dataclass
-from typing import Any
-from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+
 from app.stubs import get_current_user, User
-from app.proto_db import TASKS
-from typing import Optional
+from app.database import get_db
+from app.models import Task
+from app.schemas import TaskCreate, TaskUpdate, TaskResponse, MessageResponse
 
 router = APIRouter(
     prefix="/tasks",
     tags=["Tasks"],
 )
 
-class TaskCreate(BaseModel):
-    title: str
+@router.get("", response_model=list[TaskResponse])
+def show_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_tasks = db.query(Task).filter(Task.owner_id == current_user.id).all()
 
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    completed: Optional[bool] = None
+    return user_tasks
 
-@router.get("")
-def show_tasks(current_user: User = Depends(get_current_user)):
-    user_tasks = [task for task in TASKS if task["owner_id"] == current_user.id]
-
-    return {
-        "owner_id": current_user.id,
-        "tasks": user_tasks
-    }
-
-@router.get("/{task_id}")
-def show_task_id(task_id: int, current_user: User = Depends(get_current_user)):
-    for task in TASKS: 
-        if task["id"] == task_id and task["owner_id"] == current_user.id:
-            return {"task": task}
+@router.get("/{task_id}", response_model=TaskResponse)
+def get_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         
-    raise HTTPException(status_code=404, detail="Task not found")
+    task: Task = db.query(Task).filter(Task.owner_id == current_user.id, Task.id == task_id).first()
 
-@router.post("")
-def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_user)):
-    new_id = max(task["id"] for task in TASKS)+1
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return task
 
-    new_task = {
-        "id": new_id,
-        "owner_id": current_user.id,
-        "title": task_data.title,
-        "completed": False
-    }
+@router.post("", response_model=TaskResponse)
+def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
 
-    TASKS.append(new_task)
+    new_task = Task(
+        owner_id=current_user.id,
+        title=task_data.title,
+        completed=False
+    )
 
-    return {"task": new_task}
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
 
-@router.delete("/{task_id}")
-def remove_task(task_id: int, current_user: User = Depends(get_current_user)):
-    for task in TASKS:
-        if task["id"] == task_id and task["owner_id"] == current_user.id:
-            TASKS.remove(task)
-            return {"message": "Task deleted"}
+    return new_task
+
+@router.delete("/{task_id}", response_model=MessageResponse)
+def remove_task(task_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         
-    ##if task was not found during iteration, 404 error
-    raise HTTPException(status_code=404, detail="Task not found")
+    task = db.query(Task).filter(Task.owner_id == current_user.id, Task.id == task_id).first()
+    
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    db.delete(task)
+    db.commit()
 
-@router.patch("/{task_id}")
-def update_task(task_id: int, update_data: TaskUpdate, current_user = Depends(get_current_user)):
-    for task in TASKS:
-        if task["id"] == task_id and task["owner_id"] == current_user.id:
-            task.update(update_data.dict(exclude_unset=True))
-            return
-        
-    raise HTTPException(status_code=404, detail="Task not found")
+    return {"message": "Task deleted"}
+
+@router.patch("/{task_id}", response_model=TaskResponse)
+def update_task(task_id: int, update_data: TaskUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    task: Task = db.query(Task).filter(Task.owner_id == current_user.id, Task.id == task_id).first()
+
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    data = update_data.model_dump(exclude_unset=True)
+
+    if not data:
+        raise HTTPException(status_code=400, detail="No data was provided for update")
+
+    for key, value in data.items():
+        setattr(task, key, value)
+
+    db.commit()
+    db.refresh(task)
+
+    return task
