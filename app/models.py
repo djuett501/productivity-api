@@ -8,6 +8,7 @@ class Task(Base):
     owner_id = Column(Integer, nullable=False)
     title = Column(String, nullable=False, index=True)
     completed = Column(Boolean, default=False)
+    description = Column(String, nullable=True)
 
 
 
