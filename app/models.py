@@ -1,5 +1,10 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint, Enum
 from app.database import Base
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 3651bde (fix syntax error in import)
 
 class Task(Base):
     __tablename__ = "tasks"
