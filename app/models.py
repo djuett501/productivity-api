@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, CheckConstraint
 from app.database import Base
+from 
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -8,8 +9,6 @@ class Task(Base):
     owner_id = Column(Integer, nullable=False)
     title = Column(String, nullable=False, index=True)
     completed = Column(Boolean, default=False)
-    description = Column(String, nullable=True)
-
 
 
 class User(Base):

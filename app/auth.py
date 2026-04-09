@@ -7,16 +7,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-
-SECRET_KEY = "change-this-later-to-a-long-random-secret"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
+from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 bearer_scheme = HTTPBearer()
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
