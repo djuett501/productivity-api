@@ -1,20 +1,29 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from datetime import datetime, date
 
 class TaskCreate(BaseModel):
     title: str
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    priority: int = Field(default=1, ge=1, le=3)
 
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     completed: Optional[bool] = None
-
+    due_date: Optional[date] = None
+    priority: Optional[int] = Field(default=1, ge=1, le=3)
+    description: Optional[str] = None
 
 class TaskResponse(BaseModel):
     id: int
     owner_id: int
     title: str
     completed: bool
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    priority: int
 
     model_config = {
         "from_attributes": True

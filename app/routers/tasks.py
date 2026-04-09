@@ -33,7 +33,10 @@ def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_
     new_task = Task(
         owner_id=current_user.id,
         title=task_data.title,
-        completed=False
+        completed=False,
+        description=task_data.description,
+        priority=task_data.priority,
+        due_date=task_data.due_date
     )
 
     db.add(new_task)
